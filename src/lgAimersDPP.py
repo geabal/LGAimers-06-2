@@ -210,41 +210,21 @@ def fillDIna(df):
   return res
 
 # PGD, PGS 검사 관련 결측치 0으로 대치
-def fillPGD(df):
+#임신 시도 또는 마지막 임신 경과 연수, 경과일 컬럼 결측치 -1 대치
+def fillallna(df):
     res = deepcopy(df)
 
     cols = ['착상 전 유전 검사 사용 여부', '착상 전 유전 진단 사용 여부',
             'PGD 시술 여부', 'PGS 시술 여부']
     for col in cols:
         res[col] = res[col].fillna(0)
-    return res
 
-# '~ 경과일' 컬럼: 해당 컬럼을 제거하고 '~ 여부' 컬럼 추가.
-# '~ 경과일' 컬럼이 NaN인 경우 0, 그렇지 않은 경우 1로 기록
-def dateToProgress(df):
-    tmp = deepcopy(df)
-    tmp['난자 채취 여부'] = 0
-    tmp['난자 해동 여부'] = 0
-    tmp['난자 혼합 여부'] = 0
-    tmp['배아 이식 여부'] = 0
-    tmp['배아 해동 여부'] = 0
+    # -1로 결측치 대체하는 컬럼들
+    cols2 = ['난자 채취 경과일', '난자 해동 경과일', '난자 혼합 경과일', 
+             '배아 이식 경과일', '배아 해동 경과일', '임신 시도 또는 마지막 임신 경과 연수']
+    for col in cols2:
+        res[col] = res[col].fillna(-1)
 
-    rows = tmp.values.tolist()
-    cols = tmp.columns.tolist()
-    startCol = cols.index('난자 채취 경과일')
-    endCol = cols.index('배아 해동 경과일')
-
-    newStartCol = cols.index('난자 채취 여부')
-    newEndCol = cols.index('배아 해동 여부')
-
-    for i in range(len(rows)):
-        for j in range(5):
-            if not np.isnan(rows[i][startCol+j]):
-                rows[i][newStartCol+j] = 1
-
-    res = pd.DataFrame(columns = cols, data = rows)
-    res = res.drop(columns=[ '난자 채취 경과일','난자 해동 경과일',
-           '난자 혼합 경과일','배아 이식 경과일','배아 해동 경과일'])
     return res
 
 def dpp(df):
@@ -253,9 +233,8 @@ def dpp(df):
     res = tonum(res)
     res = getCellAge(res)
     res = onehot(res)
+    res = fillallna(res)
     res = fillDIna(res)
-    res = fillPGD(res)
-    res = dateToProgress(res)
-    res = res.drop(columns=['임신 시도 또는 마지막 임신 경과 연수','ID','시술 시기 코드'])
+    res = res.drop(columns=['ID','시술 시기 코드'])
 
     return res
